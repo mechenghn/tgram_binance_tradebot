@@ -112,4 +112,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-tgram_binance.cfg
+.cfg
+user.cfg
+user.cfg

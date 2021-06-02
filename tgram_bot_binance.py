@@ -65,16 +65,30 @@ def balance(update,context):
     try:
         acc = client.get_account()
         bal = acc['balances']
+        totalUSD = 0
         for coin in supported_coin:
             subtext = str(coin) + ' - '
             free = float(get_balance_free(bal,str(coin)))
-            subtext+=str(free)
-            subtext+='/'
+            #subtext+=str(free)
+            #subtext+='/'
             lock = float(get_balance_lock(bal,str(coin)))
-            subtext+=str(lock)
-            subtext+='\n'
+            #subtext+=str(lock)
+            #subtext+='\n'
             if (free + lock) > 0:
+                #get price
+                if coin != 'BUSD':
+                    SYM = coin + 'BUSD'
+                    avg_data = client.get_avg_price(symbol=SYM)
+                    #print(avg_data)
+                    free = free * float(avg_data['price'])
+                    lock = lock * float(avg_data['price'])
+                subtext+=  "{:7.2f}".format(free)
+                subtext+='/'
+                subtext+=  "{:7.2f}".format(lock) 
+                subtext+='\n'
+                totalUSD = totalUSD + free + lock
                 replytext+=subtext
+        replytext = replytext + "Total in BUSD: " +  "{:7.2f}".format(totalUSD)
         update.message.reply_text(replytext)
         #print(replytext)
     except BinanceAPIException as e:
