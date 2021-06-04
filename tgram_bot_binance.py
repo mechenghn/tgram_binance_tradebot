@@ -60,6 +60,7 @@ def help(update, context):
     """Send a message when the command /help is issued."""
     update.message.reply_text('/coin: support crypto \n/balance: query asset\nget quotation in BUSD: quote <code> \nto buy: buy <code> <amount in BUSD>\nto sell: sell <code> <percentage>')
 
+#V1.2-Return value in BUSD equivalence
 def balance(update,context):
     replytext="<code> - (free/lock)\n"
     try:
@@ -107,6 +108,7 @@ def get_balance_lock(all_balance, coin):
     for asset in all_balance:
         if coin == asset['asset']:
             return asset['locked']
+
 
 def query(update,context):
     update.message.reply_text('Updating balance...')
@@ -203,6 +205,9 @@ def transaction_handle(update,context):
         sell_coin(update, CommandString[1].upper(),CommandString[2])
     elif CommandString[0].lower() == 'quote':
         quote(update,CommandString[1].upper())
+    #v1.2 update crypto list
+    elif CommandString[0].lower() == 'add':
+        add_coin(update,CommandString[1].upper())
     else:
         update.message.reply_text('Unsupported command')
 
@@ -244,6 +249,42 @@ def get_round_precision(symbol):
         else:
             prec += 1
     return prec
+
+#V1.2 Add too supported coin list
+def add_coin(update,symbol):
+    Status = 'Failure'
+    if symbol == 'USDT':
+        Status+=" - Transaction is prohibited"
+        update.message.reply_text('Update coin: ' + symbol + ': ' +Status) 
+        return
+    if check_supported_symbol(symbol) == True:
+        Status = 'Coin existed'
+        update.message.reply_text('Update coin: ' + symbol + ': ' +Status) 
+        return
+    ret = ""
+    try:
+        ret = client.get_asset_balance(asset=str(symbol))
+        #print(ret)
+        if ret == None:
+            Status='Failure: Binance - unsupported crypto'
+            update.message.reply_text('Update coin: ' + symbol + ': ' +Status) 
+        elif len(ret) == 3: #valid binance response
+            supported_coin.append(symbol)
+            #append support_coin_list
+            with open("supported_coin_list", "a") as file_object:
+                file_object.write(symbol + "\n")
+            Status = "Success"
+            update.message.reply_text('Update coin: ' + symbol + ': ' +Status) 
+        else:
+            Status='Failure: Binance - unsupported crypto'
+            update.message.reply_text('Update coin: ' + symbol + ': ' +Status) 
+    except BinanceAPIException as e:
+        print(e)
+        Status = 'Failure\n' + str(e)[str(e).find(':')+2:len(str(e))]
+        update.message.reply_text('Update coin: ' + symbol + ': ' +Status)
+        return
+    
+    
 
 def buy_coin(update, Ticket, Amount):
     print('Buy_coin ' + Ticket + ' $' + Amount)
